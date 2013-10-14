@@ -65,7 +65,9 @@ class SCMConsumer(FedmsgConsumer):
         self.cmd('git show --abbrev-commit --color %s' % commit['rev'],
                  cwd=path)
         if 'sources' in commit['stats']['files']:
-            self.diff_sources(commit, path)
+            repo = git.Repo(path)
+            self.diff_sources(repo, commit, path)
+            self.diff_upstream(repo, commit, path)
 
         reactor.callLater(PRINT_DELAY, self.printer)
 
@@ -92,9 +94,8 @@ class SCMConsumer(FedmsgConsumer):
         url = 'git://pkgs.fedoraproject.org/%s' % repo
         self.cmd('git clone -b %s %s' % (branch, url), cwd=REPO_PATH)
 
-    def diff_sources(self, commit, path):
+    def diff_sources(self, repo, commit, path):
         "Diff the extracted sources of this commit and the previous"
-        repo = git.Repo(path)
 
         # Checkout and prep the previous commit
         repo.git.checkout('%s^' % commit['rev'], b='__old__')
@@ -113,6 +114,19 @@ class SCMConsumer(FedmsgConsumer):
         # Clean up
         repo.delete_head('__old__')
         repo.delete_head('__new__')
+        self.cmd('fedpkg clean', cwd=path)
+
+    def diff_upstream(self, repo, commit, path):
+        "Diff the upstream tarball with what was uploaded to Fedora"
+        self.log.info('Comparing against upstream tarball')
+        self.cmd('spectool --get-files *.spec', cwd=path)
+        upstream_src = self.find_source(repo, path)
+        os.rename(upstream_src, upstream_src + '.upstream')
+        upstream_src += '.upstream'
+        self.cmd('fedpkg --dist %s prep' % commit['branch'], cwd=path)
+        fedora_src = self.find_source(repo, path, ignore=upstream_src)
+        self.cmd("diff -Nur '%s' '%s' | colordiff" % (upstream_src, fedora_src),
+                 cwd=path)
         self.cmd('fedpkg clean', cwd=path)
 
     def find_source(self, repo, path, ignore=None):

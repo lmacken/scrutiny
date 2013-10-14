@@ -9,7 +9,8 @@ Current Features
 -----------------
 
 * Listens to the [fedmsg](http://fedmsg.com) bus for git commits
-* Downloads, extracts, and compares upstream tarballs
+* Downloads, extracts, and compares source code
+* Compares the upstream source with Fedora's lookaside cache
 * Slowly scrolls code changes as they are committed
 
 Future Features
