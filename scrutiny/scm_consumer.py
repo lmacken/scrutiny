@@ -104,6 +104,9 @@ class SCMConsumer(FedmsgConsumer):
             self.log.error('Cannot find old source dir for commit %s in %s' %
                            (commit['branch'], repo))
             return
+        else:
+            shutil.move(old_source, old_source + '.old')
+            old_source += '.old'
 
         # Checkout and prep the most recent commit
         repo.git.checkout(commit['rev'], b='__new__')
