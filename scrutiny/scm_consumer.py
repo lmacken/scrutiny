@@ -111,6 +111,7 @@ class SCMConsumer(FedmsgConsumer):
                  cwd=path)
 
         # Clean up
+        repo.git.checkout('master')
         repo.delete_head('__old__')
         repo.delete_head('__new__')
         self.cmd('fedpkg clean', cwd=path)
