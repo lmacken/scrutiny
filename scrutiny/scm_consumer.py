@@ -100,6 +100,10 @@ class SCMConsumer(FedmsgConsumer):
         repo.git.checkout('%s^' % commit['rev'], b='__old__')
         self.cmd('fedpkg --dist %s prep' % commit['branch'], cwd=path)
         old_source = self.find_source(repo, path)
+        if not old_source:
+            self.log.error('Cannot find old source dir for commit %s in %s' %
+                           (commit['branch'], repo))
+            return
 
         # Checkout and prep the most recent commit
         repo.git.checkout(commit['rev'], b='__new__')
